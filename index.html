@@ -140,7 +140,7 @@
     document.getElementById("endpoint4").textContent = `${base}?endpoint=activeDrivers`;
     document.getElementById("endpoint5").textContent = `${base}?endpoint=userTickets`;
 
-    /** Realtime listener - ALWAYS stays connected */
+    /** Realtime listener */
     const dbRef = ref(db);
     onValue(dbRef, (snapshot) => {
         firebaseData = snapshot.val() || {};
@@ -169,7 +169,7 @@
         document.getElementById("dataCount").textContent = `${count} collections loaded`;
     }
 
-    /** Test button handler */
+    /** UI Test Buttons */
     window.testEndpoint = function(endpoint) {
         const div = document.getElementById(`response-${endpoint}`);
         const data = endpoint === "all" ? firebaseData : firebaseData[endpoint] || { error: "No data found" };
@@ -177,15 +177,31 @@
         div.classList.add("show");
     };
 
-    /** API mode: return JSON directly for n8n */
+    /** ⭐ API MODE: Wait until Firebase loads, then return JSON */
     const params = new URLSearchParams(window.location.search);
     const endpoint = params.get("endpoint");
 
     if (endpoint) {
-        document.body.innerHTML = `<pre>${JSON.stringify(
-            endpoint === "all" ? firebaseData : firebaseData[endpoint] || { error: "Invalid endpoint" },
-            null, 2
-        )}</pre>`;
+
+        document.body.innerHTML = "<h3 style='color:white;padding:20px;'>⏳ Loading realtime data...</h3>";
+
+        let wait = setInterval(() => {
+            if (Object.keys(firebaseData).length > 0) {
+                clearInterval(wait);
+
+                let responseData;
+
+                if (endpoint === "all") {
+                    responseData = firebaseData;
+                } else if (firebaseData[endpoint]) {
+                    responseData = firebaseData[endpoint];
+                } else {
+                    responseData = { error: "Endpoint not found" };
+                }
+
+                document.body.innerHTML = `<pre>${JSON.stringify(responseData, null, 2)}</pre>`;
+            }
+        }, 50);
     }
 </script>
 
